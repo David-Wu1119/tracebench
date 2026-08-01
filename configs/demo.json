@@ -1,0 +1,19 @@
+{
+  "base_rate_rps": 0.2,
+  "batch_window_ms": 100,
+  "burst_multiplier": 8.0,
+  "drift": {
+    "config_days": 30.0,
+    "index_days": 1.0,
+    "model_days": 90.0,
+    "prompt_days": 7.0
+  },
+  "mean_burst_seconds": 10.0,
+  "mean_quiet_seconds": 80.0,
+  "median_input_tokens": 1024,
+  "median_output_tokens": 32,
+  "requests_per_regime": 96,
+  "seed": 20260801,
+  "snapshot_retention_days": 0.0,
+  "token_sigma": 1.0
+}

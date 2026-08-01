@@ -1,0 +1,144 @@
+{
+  "burst_state": {
+    "definition": "BurstGPT 10-second bin count at or above its p95 count",
+    "high_p50_s": 10,
+    "high_p75_s": 30,
+    "high_runs": 5008,
+    "p95_to_mean_rate_ratio": 5.16036,
+    "p99_to_mean_rate_ratio": 12.9009,
+    "quiet_p50_s": 30,
+    "quiet_p75_s": 80,
+    "quiet_runs": 5009,
+    "threshold_count": 14
+  },
+  "derivation": {
+    "base_rate_rps": "BurstGPT mean RPS rounded down to one decimal; BurstGPT permits RPS scaling.",
+    "burst_multiplier": "Rounded geometric center of BurstGPT 10-second p95/mean and p99/mean ratios.",
+    "state_durations": "Burst duration is high-state p50; quiet duration is quiet-state p75.",
+    "token_medians": "Nearest powers of two to geometric centers of the three source medians.",
+    "token_sigma": "Nearest 0.25 to the mean of median input and output log-space sigmas."
+  },
+  "derived_demo_parameters": {
+    "base_rate_rps": 0.2,
+    "burst_multiplier": 8.0,
+    "mean_burst_seconds": 10.0,
+    "mean_quiet_seconds": 80.0,
+    "median_input_tokens": 1024,
+    "median_output_tokens": 32,
+    "token_sigma": 1.0
+  },
+  "not_calibrated": [
+    "artifact drift cadences",
+    "artifact sizes",
+    "batch window",
+    "audit horizons"
+  ],
+  "schema": "tracebench/public-trace-calibration/v1",
+  "sources": [
+    {
+      "duration_s": 5269968.0,
+      "input_tokens": {
+        "p50": 251,
+        "p75": 758,
+        "p90": 1796,
+        "p95": 2461,
+        "positive_log_sigma": 1.134306,
+        "positive_p50": 262,
+        "zero_count": 25427
+      },
+      "mean_rps": 0.271299,
+      "name": "BurstGPT_1",
+      "output_tokens": {
+        "p50": 34,
+        "p75": 134,
+        "p90": 272,
+        "p95": 460,
+        "positive_log_sigma": 1.817418,
+        "positive_p50": 36,
+        "zero_count": 25443
+      },
+      "rows": 1429737,
+      "sha256": "46fc9480ef0b748ecb2b51d512ff08c196b031782cbe6f78e28044d768e86d5a",
+      "ten_second_bins": {
+        "bins": 526997,
+        "max_count": 320,
+        "mean_count": 2.712989,
+        "p50_count": 0,
+        "p95_count": 14,
+        "p99_count": 35,
+        "width_s": 10
+      },
+      "url": "https://raw.githubusercontent.com/HPMLL/BurstGPT/8345c824bf744e21692186af2835521ba75e5f6d/data/BurstGPT_1.csv"
+    },
+    {
+      "duration_s": 3435.948056,
+      "input_tokens": {
+        "p50": 1469,
+        "p75": 2745,
+        "p90": 5194,
+        "p95": 7315,
+        "positive_log_sigma": 1.360193,
+        "positive_p50": 1469,
+        "zero_count": 0
+      },
+      "mean_rps": 2.566686,
+      "name": "AzureLLMInferenceTrace_code",
+      "output_tokens": {
+        "p50": 13,
+        "p75": 24,
+        "p90": 55,
+        "p95": 90,
+        "positive_log_sigma": 0.847238,
+        "positive_p50": 13,
+        "zero_count": 0
+      },
+      "rows": 8819,
+      "sha256": "54e9a6d2a4bd06ba1e060304b900abbc74cbea53de96506e60fe5bb4f2277fb6",
+      "ten_second_bins": {
+        "bins": 344,
+        "max_count": 327,
+        "mean_count": 25.636628,
+        "p50_count": 0,
+        "p95_count": 126,
+        "p99_count": 159,
+        "width_s": 10
+      },
+      "url": "https://raw.githubusercontent.com/Azure/AzurePublicDataset/790921015d50dd6aae7f7e47f39ba0e235ad6b08/data/AzureLLMInferenceTrace_code.csv"
+    },
+    {
+      "duration_s": 3501.721937,
+      "input_tokens": {
+        "p50": 1020,
+        "p75": 1189,
+        "p90": 2735,
+        "p95": 4083,
+        "positive_log_sigma": 0.985154,
+        "positive_p50": 1020,
+        "zero_count": 0
+      },
+      "mean_rps": 5.530422,
+      "name": "AzureLLMInferenceTrace_conv",
+      "output_tokens": {
+        "p50": 129,
+        "p75": 395,
+        "p90": 424,
+        "p95": 451,
+        "positive_log_sigma": 0.859009,
+        "positive_p50": 129,
+        "zero_count": 0
+      },
+      "rows": 19366,
+      "sha256": "2f1e5b666d4e3055fdbba98598ce2ec307767b9064e03e2fa46676dbcc7d0bf8",
+      "ten_second_bins": {
+        "bins": 351,
+        "max_count": 98,
+        "mean_count": 55.173789,
+        "p50_count": 53,
+        "p95_count": 83,
+        "p99_count": 88,
+        "width_s": 10
+      },
+      "url": "https://raw.githubusercontent.com/Azure/AzurePublicDataset/790921015d50dd6aae7f7e47f39ba0e235ad6b08/data/AzureLLMInferenceTrace_conv.csv"
+    }
+  ]
+}

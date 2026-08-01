@@ -1,0 +1,63 @@
+{
+  "benchmark_version": "0.1.0a0",
+  "configuration": {
+    "base_rate_rps": 0.2,
+    "batch_window_ms": 100,
+    "burst_multiplier": 8.0,
+    "drift": {
+      "config_days": 30.0,
+      "index_days": 1.0,
+      "model_days": 90.0,
+      "prompt_days": 7.0
+    },
+    "mean_burst_seconds": 10.0,
+    "mean_quiet_seconds": 80.0,
+    "median_input_tokens": 1024,
+    "median_output_tokens": 32,
+    "requests_per_regime": 96,
+    "seed": 20260801,
+    "snapshot_retention_days": 0.0,
+    "token_sigma": 1.0
+  },
+  "horizons_days": [
+    30,
+    90,
+    365
+  ],
+  "interpretation": "Structural replay eligibility over virtual artifact sizes; no model was executed.",
+  "measurement_scope": {
+    "artifact_sizes": "virtual",
+    "decision_divergence": "not_measured",
+    "model_execution": "none",
+    "replay_result": "structural_eligibility"
+  },
+  "policies": [
+    "input-output-only",
+    "mlflow-reference",
+    "wandb-reference",
+    "full-artifact-dedup",
+    "capsule"
+  ],
+  "result_rows": 30,
+  "results_csv_sha256": "c1d2635bf9acba6bdb81724007e90c4b7ed17e005f79c0677ea52f5895930a1e",
+  "results_markdown_sha256": "31b867fdb2fff26ac70b895e334029fdf914f84c568dd0003e0f54a09e4117fc",
+  "schema": "tracebench/demo-manifest/v1",
+  "workload_summaries": {
+    "burst": {
+      "elapsed_s": 155.695319,
+      "max_requests_per_1s_window": 5,
+      "mean_interarrival_s": 1.566537,
+      "p95_interarrival_s": 7.94232,
+      "requests": 96,
+      "subsecond_intervals": 62
+    },
+    "poisson": {
+      "elapsed_s": 458.010305,
+      "max_requests_per_1s_window": 3,
+      "mean_interarrival_s": 4.778593,
+      "p95_interarrival_s": 16.15636,
+      "requests": 96,
+      "subsecond_intervals": 19
+    }
+  }
+}

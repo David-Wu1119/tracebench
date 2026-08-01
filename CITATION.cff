@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use TraceBench, cite this software and the public trace sources listed in NOTICE.md."
+title: "TraceBench: A Replay-Sufficiency Benchmark for ML Decision Evidence"
+type: software
+authors:
+  - family-names: "Wu"
+    given-names: "David"
+repository-code: "https://github.com/David-Wu1119/tracebench"
+license: MIT
+version: "0.1.0-alpha"
+date-released: "2026-08-01"
