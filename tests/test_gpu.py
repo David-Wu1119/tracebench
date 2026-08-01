@@ -13,6 +13,7 @@ from tracebench.gpu import (
     GPU_PLAN_SCHEMA,
     analyze_gpu_evidence,
     build_gpu_schedules,
+    compare_gpu_replications,
     model_snapshot_sha256,
     output_token_sha256,
     plan_sha256,
@@ -22,6 +23,7 @@ from tracebench.gpu import (
     verify_gpu_evidence,
     verify_model_snapshot,
     write_gpu_analysis,
+    write_gpu_replication_comparison,
 )
 from tracebench.model import TraceBenchError, canonical_json_bytes
 
@@ -226,8 +228,8 @@ class GpuContractTests(unittest.TestCase):
             with self.assertRaisesRegex(TraceBenchError, "exact registered file set"):
                 verify_model_snapshot(model_path, model)
 
-    def write_evidence(self, root: Path) -> None:
-        plan = gpu_plan()
+    def write_evidence(self, root: Path, *, plan: dict | None = None) -> None:
+        plan = gpu_plan() if plan is None else plan
         runtime = environment(plan)
         (root / "plan.json").write_text(
             json.dumps(plan, indent=2, sort_keys=True) + "\n",
@@ -378,6 +380,16 @@ class GpuContractTests(unittest.TestCase):
         )
         self.rewrite_checksums(root)
 
+    def retime_manifest(self, root: Path) -> None:
+        manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+        manifest["started_at"] = "2026-08-01T05:02:00Z"
+        manifest["completed_at"] = "2026-08-01T05:03:00Z"
+        (root / "manifest.json").write_text(
+            json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        self.rewrite_checksums(root)
+
     def test_evidence_verification_and_analysis_measure_exact_divergence(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             evidence = Path(temporary_directory) / "evidence"
@@ -401,6 +413,140 @@ class GpuContractTests(unittest.TestCase):
                 {path.name for path in output.iterdir()},
                 {"gpu-results.csv", "gpu-results.json", "gpu-results.md"},
             )
+
+    def test_replication_comparison_checks_every_execution_outcome(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            first = root / "first"
+            second = root / "second"
+            first.mkdir()
+            second.mkdir()
+            self.write_evidence(first)
+            self.write_evidence(second)
+            self.retime_manifest(second)
+
+            comparison = compare_gpu_replications(first, second)
+
+            self.assertEqual(comparison["execution_records_compared"], 6)
+            self.assertEqual(comparison["outcome_mismatches"], 0)
+            self.assertTrue(comparison["identical_execution_outcomes"])
+            self.assertTrue(comparison["identical_analysis_rows"])
+
+            output = root / "comparison"
+            write_gpu_replication_comparison(output, comparison)
+            self.assertEqual(
+                {path.name for path in output.iterdir()},
+                {
+                    "gpu-replication.csv",
+                    "gpu-replication.json",
+                    "gpu-replication.md",
+                },
+            )
+
+    def test_replication_comparison_exposes_per_execution_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            first = root / "first"
+            second = root / "second"
+            first.mkdir()
+            second.mkdir()
+            self.write_evidence(first)
+            self.write_evidence(second)
+            self.retime_manifest(second)
+            records = [
+                json.loads(line)
+                for line in (second / "executions.jsonl")
+                .read_text(encoding="utf-8")
+                .splitlines()
+            ]
+            records[0]["output_token_ids"] = [99]
+            records[0]["output_sha256"] = output_token_sha256([99])
+            (second / "executions.jsonl").write_text(
+                "".join(
+                    json.dumps(record, sort_keys=True) + "\n" for record in records
+                ),
+                encoding="utf-8",
+            )
+            self.rewrite_manifest_hashes(second)
+
+            comparison = compare_gpu_replications(first, second)
+
+            self.assertEqual(comparison["outcome_mismatches"], 1)
+            self.assertEqual(comparison["output_mismatches"], 1)
+            self.assertFalse(comparison["identical_execution_outcomes"])
+            self.assertEqual(
+                comparison["mismatches"][0]["request_id"], "request-a"
+            )
+
+    def test_replication_comparison_rejects_different_registered_plans(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            first = root / "first"
+            second = root / "second"
+            first.mkdir()
+            second.mkdir()
+            self.write_evidence(first)
+            changed_plan = gpu_plan()
+            changed_plan["preregistration"]["hypothesis"] = "different hypothesis"
+            self.write_evidence(second, plan=changed_plan)
+
+            with self.assertRaisesRegex(TraceBenchError, "same registered GPU plan"):
+                compare_gpu_replications(first, second)
+
+    def test_replication_comparison_rejects_a_duplicated_evidence_bundle(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            evidence = Path(temporary_directory)
+            self.write_evidence(evidence)
+
+            with self.assertRaisesRegex(TraceBenchError, "distinct evidence manifests"):
+                compare_gpu_replications(evidence, evidence)
+
+    def test_checked_in_gpu_packet_verifies_and_generated_outputs_do_not_drift(
+        self,
+    ) -> None:
+        repository = Path(__file__).resolve().parents[1]
+        packet = (
+            repository
+            / "results"
+            / "gpu"
+            / "qwen25-05b-rtx2060-batching-v1"
+        )
+        first = packet / "run2-public-evidence"
+        second = packet / "run3-public-evidence"
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            generated = Path(temporary_directory)
+            for evidence, checked_in_name in (
+                (first, "run2-analysis"),
+                (second, "run3-analysis"),
+            ):
+                output = generated / checked_in_name
+                write_gpu_analysis(output, analyze_gpu_evidence(evidence))
+                for name in ("gpu-results.csv", "gpu-results.json", "gpu-results.md"):
+                    self.assertEqual(
+                        (output / name).read_bytes(),
+                        (packet / checked_in_name / name).read_bytes(),
+                    )
+
+            comparison = compare_gpu_replications(first, second)
+            output = generated / "replication-comparison"
+            write_gpu_replication_comparison(output, comparison)
+            for name in (
+                "gpu-replication.csv",
+                "gpu-replication.json",
+                "gpu-replication.md",
+            ):
+                self.assertEqual(
+                    (output / name).read_bytes(),
+                    (packet / "replication-comparison" / name).read_bytes(),
+                )
+
+        for evidence in (first, second):
+            inventory = (evidence / "nvidia-smi.txt").read_text(encoding="utf-8")
+            self.assertIn("GPU UUID", inventory)
+            self.assertIn("[REDACTED FOR PUBLIC COPY]", inventory)
+            self.assertNotRegex(inventory, r"GPU UUID\s+:\s+GPU-[0-9a-fA-F-]+")
+            self.assertNotRegex(inventory, r"GPU PDI\s+:\s+0x[0-9a-fA-F]+")
+            self.assertNotRegex(inventory, r"Name\s+:\s+[A-Za-z]:\\")
 
     def test_failed_batch_is_retained_and_excluded_from_divergence_rate(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

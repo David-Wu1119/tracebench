@@ -1,0 +1,5 @@
+mode,condition,planned_comparisons,valid_comparisons,invalid_comparisons,divergences,sequence_divergence_rate_pct,wilson_95_lower_pct,wilson_95_upper_pct,mean_normalized_first_difference
+greedy,uncontrolled_batch_variation,80,80,0,4,5.0,1.961,12.162,0.0
+greedy,capsule_pinned_replay,80,80,0,0,0.0,0.0,4.582,
+sampled,uncontrolled_batch_variation,80,80,0,69,86.25,77.033,92.145,0.159434
+sampled,capsule_pinned_replay,80,80,0,0,0.0,0.0,4.582,
