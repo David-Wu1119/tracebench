@@ -378,7 +378,7 @@ class GpuContractTests(unittest.TestCase):
         )
         self.rewrite_checksums(root)
 
-    def test_evidence_verification_and_analysis_keep_invalids_separate(self) -> None:
+    def test_evidence_verification_and_analysis_measure_exact_divergence(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             evidence = Path(temporary_directory) / "evidence"
             evidence.mkdir()
@@ -401,6 +401,46 @@ class GpuContractTests(unittest.TestCase):
                 {path.name for path in output.iterdir()},
                 {"gpu-results.csv", "gpu-results.json", "gpu-results.md"},
             )
+
+    def test_failed_batch_is_retained_and_excluded_from_divergence_rate(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            evidence = Path(temporary_directory)
+            self.write_evidence(evidence)
+            records = [
+                json.loads(line)
+                for line in (evidence / "executions.jsonl")
+                .read_text(encoding="utf-8")
+                .splitlines()
+            ]
+            for record in records[2:4]:
+                record["status"] = "failed"
+                record["output_token_ids"] = []
+                record["output_sha256"] = None
+                record["error"] = "RuntimeError: fixture batch failure"
+            (evidence / "executions.jsonl").write_text(
+                "".join(
+                    json.dumps(record, sort_keys=True) + "\n" for record in records
+                ),
+                encoding="utf-8",
+            )
+            manifest = json.loads(
+                (evidence / "manifest.json").read_text(encoding="utf-8")
+            )
+            manifest["completed_records"] = 4
+            manifest["failed_records"] = 2
+            (evidence / "manifest.json").write_text(
+                json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            self.rewrite_manifest_hashes(evidence)
+
+            verify_gpu_evidence(evidence)
+            analysis = analyze_gpu_evidence(evidence)
+
+            for row in analysis["rows"]:
+                self.assertEqual(row["valid_comparisons"], 0)
+                self.assertEqual(row["invalid_comparisons"], 2)
+                self.assertIsNone(row["sequence_divergence_rate_pct"])
 
     def test_outer_checksum_tampering_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
