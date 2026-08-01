@@ -1,0 +1,133 @@
+{
+  "error_mismatches": 0,
+  "execution_records_compared": 352,
+  "experiment_id": "qwen25-05b-rtx2060-batching-v1",
+  "identical_analysis_rows": true,
+  "identical_execution_outcomes": true,
+  "mismatches": [],
+  "outcome_mismatches": 0,
+  "output_mismatches": 0,
+  "plan_sha256": "d813bd11bf60d9845438d9865b4592e426adeab7686a923a06b7409ad1da44cc",
+  "runs": [
+    {
+      "analysis_rows": [
+        {
+          "condition": "uncontrolled_batch_variation",
+          "divergences": 4,
+          "invalid_comparisons": 0,
+          "mean_normalized_first_difference": 0.0,
+          "mode": "greedy",
+          "planned_comparisons": 80,
+          "sequence_divergence_rate_pct": 5.0,
+          "valid_comparisons": 80,
+          "wilson_95_lower_pct": 1.961,
+          "wilson_95_upper_pct": 12.162
+        },
+        {
+          "condition": "capsule_pinned_replay",
+          "divergences": 0,
+          "invalid_comparisons": 0,
+          "mean_normalized_first_difference": null,
+          "mode": "greedy",
+          "planned_comparisons": 80,
+          "sequence_divergence_rate_pct": 0.0,
+          "valid_comparisons": 80,
+          "wilson_95_lower_pct": 0.0,
+          "wilson_95_upper_pct": 4.582
+        },
+        {
+          "condition": "uncontrolled_batch_variation",
+          "divergences": 69,
+          "invalid_comparisons": 0,
+          "mean_normalized_first_difference": 0.159434,
+          "mode": "sampled",
+          "planned_comparisons": 80,
+          "sequence_divergence_rate_pct": 86.25,
+          "valid_comparisons": 80,
+          "wilson_95_lower_pct": 77.033,
+          "wilson_95_upper_pct": 92.145
+        },
+        {
+          "condition": "capsule_pinned_replay",
+          "divergences": 0,
+          "invalid_comparisons": 0,
+          "mean_normalized_first_difference": null,
+          "mode": "sampled",
+          "planned_comparisons": 80,
+          "sequence_divergence_rate_pct": 0.0,
+          "valid_comparisons": 80,
+          "wilson_95_lower_pct": 0.0,
+          "wilson_95_upper_pct": 4.582
+        }
+      ],
+      "completed_at": "2026-08-01T06:23:42.479277Z",
+      "environment_sha256": "9a62d4d5cbd50749def3a0b9f24c3648fddf6a65f5774b9a8edcd34120d34fab",
+      "evidence_manifest_sha256": "92d5006d5ef5abd7d16c4cde766d9a66f1075dd20969b67a757a473eedd4c579",
+      "executions_sha256": "2b68523a4bea293e28b073659de55fb70f78a44264535bfd9a156b9bd81e2ac3",
+      "run": 1,
+      "started_at": "2026-08-01T06:20:44.226275Z"
+    },
+    {
+      "analysis_rows": [
+        {
+          "condition": "uncontrolled_batch_variation",
+          "divergences": 4,
+          "invalid_comparisons": 0,
+          "mean_normalized_first_difference": 0.0,
+          "mode": "greedy",
+          "planned_comparisons": 80,
+          "sequence_divergence_rate_pct": 5.0,
+          "valid_comparisons": 80,
+          "wilson_95_lower_pct": 1.961,
+          "wilson_95_upper_pct": 12.162
+        },
+        {
+          "condition": "capsule_pinned_replay",
+          "divergences": 0,
+          "invalid_comparisons": 0,
+          "mean_normalized_first_difference": null,
+          "mode": "greedy",
+          "planned_comparisons": 80,
+          "sequence_divergence_rate_pct": 0.0,
+          "valid_comparisons": 80,
+          "wilson_95_lower_pct": 0.0,
+          "wilson_95_upper_pct": 4.582
+        },
+        {
+          "condition": "uncontrolled_batch_variation",
+          "divergences": 69,
+          "invalid_comparisons": 0,
+          "mean_normalized_first_difference": 0.159434,
+          "mode": "sampled",
+          "planned_comparisons": 80,
+          "sequence_divergence_rate_pct": 86.25,
+          "valid_comparisons": 80,
+          "wilson_95_lower_pct": 77.033,
+          "wilson_95_upper_pct": 92.145
+        },
+        {
+          "condition": "capsule_pinned_replay",
+          "divergences": 0,
+          "invalid_comparisons": 0,
+          "mean_normalized_first_difference": null,
+          "mode": "sampled",
+          "planned_comparisons": 80,
+          "sequence_divergence_rate_pct": 0.0,
+          "valid_comparisons": 80,
+          "wilson_95_lower_pct": 0.0,
+          "wilson_95_upper_pct": 4.582
+        }
+      ],
+      "completed_at": "2026-08-01T06:30:06.941327Z",
+      "environment_sha256": "9a62d4d5cbd50749def3a0b9f24c3648fddf6a65f5774b9a8edcd34120d34fab",
+      "evidence_manifest_sha256": "532f6f053577997246de789a5f9173633a97121c67da71def5986a515641853e",
+      "executions_sha256": "2b97e563ea9d8d58b41830783a9f0ef018f1cc6c13b799c0341c5e9988acf5f9",
+      "run": 2,
+      "started_at": "2026-08-01T06:27:08.308050Z"
+    }
+  ],
+  "runtime_digest": "ef23fdfc086fcd428b1a7cc0752635ab3d8fa84cf062d1b2acca7b0ba4ef9adb",
+  "schema": "tracebench/gpu-replication-comparison/v1",
+  "status_mismatches": 0,
+  "tracebench_commit": "885f9209a80cce3b5f230a3b59a0a8a4a5cd8e75"
+}

@@ -1,0 +1,9 @@
+run,evidence_manifest_sha256,mode,condition,planned_comparisons,valid_comparisons,invalid_comparisons,divergences,sequence_divergence_rate_pct,wilson_95_lower_pct,wilson_95_upper_pct
+1,92d5006d5ef5abd7d16c4cde766d9a66f1075dd20969b67a757a473eedd4c579,greedy,uncontrolled_batch_variation,80,80,0,4,5.0,1.961,12.162
+1,92d5006d5ef5abd7d16c4cde766d9a66f1075dd20969b67a757a473eedd4c579,greedy,capsule_pinned_replay,80,80,0,0,0.0,0.0,4.582
+1,92d5006d5ef5abd7d16c4cde766d9a66f1075dd20969b67a757a473eedd4c579,sampled,uncontrolled_batch_variation,80,80,0,69,86.25,77.033,92.145
+1,92d5006d5ef5abd7d16c4cde766d9a66f1075dd20969b67a757a473eedd4c579,sampled,capsule_pinned_replay,80,80,0,0,0.0,0.0,4.582
+2,532f6f053577997246de789a5f9173633a97121c67da71def5986a515641853e,greedy,uncontrolled_batch_variation,80,80,0,4,5.0,1.961,12.162
+2,532f6f053577997246de789a5f9173633a97121c67da71def5986a515641853e,greedy,capsule_pinned_replay,80,80,0,0,0.0,0.0,4.582
+2,532f6f053577997246de789a5f9173633a97121c67da71def5986a515641853e,sampled,uncontrolled_batch_variation,80,80,0,69,86.25,77.033,92.145
+2,532f6f053577997246de789a5f9173633a97121c67da71def5986a515641853e,sampled,capsule_pinned_replay,80,80,0,0,0.0,0.0,4.582

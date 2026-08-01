@@ -1,0 +1,15 @@
+{
+  "completed_at": "2026-08-01T06:30:06.941327Z",
+  "completed_records": 352,
+  "environment_sha256": "9a62d4d5cbd50749def3a0b9f24c3648fddf6a65f5774b9a8edcd34120d34fab",
+  "execution_records": 352,
+  "executions_sha256": "2b97e563ea9d8d58b41830783a9f0ef018f1cc6c13b799c0341c5e9988acf5f9",
+  "experiment_id": "qwen25-05b-rtx2060-batching-v1",
+  "failed_records": 0,
+  "model_snapshot_sha256": "8048fda149f96a2d1f38036ddea4adc0a52925c9332b316c66535e679b6d35a3",
+  "plan_sha256": "d813bd11bf60d9845438d9865b4592e426adeab7686a923a06b7409ad1da44cc",
+  "requests_sha256": "f30ef609f6fe2ad9493b21d4eaed225dadcbc97d0c6404cf4ca47b3590492c66",
+  "schema": "tracebench/gpu-evidence-manifest/v1",
+  "started_at": "2026-08-01T06:27:08.308050Z",
+  "tracebench_commit": "885f9209a80cce3b5f230a3b59a0a8a4a5cd8e75"
+}

@@ -1,0 +1,2 @@
+# Preserve hash-bound Windows evidence bytes while treating CRLF as a line ending.
+results/gpu/**/run*-public-evidence/* -text whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab,cr-at-eol

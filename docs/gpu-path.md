@@ -1,10 +1,14 @@
 # GPU Decision-Divergence Path
 
-Status: runner, verifier, analyzer, and experiment plan implemented; no verified result reported yet.
+Status: preregistered experiment completed; two clean evidence bundles and an
+outcome-by-outcome replication comparison are published in
+[`results/gpu/qwen25-05b-rtx2060-batching-v1/`](../results/gpu/qwen25-05b-rtx2060-batching-v1/).
 
 ## Question
 
-When the same request is replayed on a GPU under batching variation, how often does the generated token sequence diverge, and how much of that divergence remains when a replay capsule pins the observable execution context?
+When the same request is replayed on a GPU under batching variation, how often
+does the generated token sequence diverge, and how much divergence remains when
+the registered observable execution context is repeated exactly?
 
 ## Registered engine and model
 
@@ -27,6 +31,30 @@ The GPU runner preserves raw results locally and emits a self-contained evidence
 
 The registered sample size is 80 comparisons per condition and decoding mode. This is exploratory, not a high-powered population estimate. The analyzer reports Wilson intervals and retains this limitation.
 
+`capsule_pinned_replay` is the v1 schema label. The runner manually reconstructs
+the registered context; it does not deserialize a capsule. This experiment can
+support a context-pinning result, but not a claim that a serialized capsule
+implementation has been validated.
+
+## Measured result
+
+The two reported clean runs produced identical terminal outcomes across all 352
+registered execution keys:
+
+| Decoding | Condition | Divergences / valid | Rate |
+| --- | --- | ---: | ---: |
+| Greedy | Uncontrolled batch variation | 4 / 80 | 5.000% |
+| Greedy | Registered context pinned | 0 / 80 | 0.000% |
+| Sampled | Uncontrolled batch variation | 69 / 80 | 86.250% |
+| Sampled | Registered context pinned | 0 / 80 | 0.000% |
+
+The sampled result includes the interaction between a reset global seed and
+changed batch membership/order; it is not evidence of hardware nondeterminism.
+The greedy result establishes exact-token batch-context sensitivity in this stack
+without isolating its lower-level numerical cause. Full intervals, evidence,
+redactions, failed-attempt history, and limitations are in the
+[result packet](../results/gpu/qwen25-05b-rtx2060-batching-v1/README.md).
+
 ## Commands
 
 Install the optional environment on a compatible Windows CUDA host:
@@ -46,6 +74,14 @@ Verify checksums and produce the result table on a CPU-only machine:
 
 ```bash
 PYTHONPATH=src python -m tracebench gpu-analyze --evidence /path/to/evidence-directory --output /path/to/new-analysis-directory
+```
+
+Verify two complete reruns and compare every registered execution outcome:
+
+```bash
+PYTHONPATH=src python -m tracebench gpu-compare \
+  --evidence /path/to/first-evidence /path/to/second-evidence \
+  --output /path/to/new-comparison-directory
 ```
 
 ## Required exported files
@@ -106,4 +142,6 @@ The GPU result is publishable only when:
 5. the analyzer and a small non-sensitive evidence sample are public;
 6. the paper states hardware and engine scope instead of generalizing to all GPUs or serving systems.
 
-Until those conditions hold, TraceBench has no measured GPU nondeterminism result.
+The published v1 packet satisfies this artifact gate for the declared
+Transformers/RTX 2060 scope. It does not validate CloudTune orchestration, a
+serialized capsule implementation, vLLM, or serving systems generally.

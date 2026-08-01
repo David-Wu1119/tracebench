@@ -1,0 +1,8 @@
+2026-08-01T06:27:08.311041Z experiment_start experiment_id=qwen25-05b-rtx2060-batching-v1
+2026-08-01T06:27:08.541466Z model_load_start
+2026-08-01T06:27:09.774964Z model_load_complete
+2026-08-01T06:27:09.774964Z mode_start mode=greedy
+2026-08-01T06:28:36.841524Z mode_complete mode=greedy
+2026-08-01T06:28:36.841524Z mode_start mode=sampled
+2026-08-01T06:30:06.941327Z mode_complete mode=sampled
+2026-08-01T06:30:06.941327Z experiment_complete completed_records=352 failed_records=0

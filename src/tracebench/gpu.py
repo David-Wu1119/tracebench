@@ -19,6 +19,7 @@ GPU_PLAN_SCHEMA = "tracebench/gpu-plan/v1"
 GPU_EXECUTION_SCHEMA = "tracebench/gpu-execution/v1"
 GPU_MANIFEST_SCHEMA = "tracebench/gpu-evidence-manifest/v1"
 GPU_ANALYSIS_SCHEMA = "tracebench/gpu-analysis/v1"
+GPU_REPLICATION_SCHEMA = "tracebench/gpu-replication-comparison/v1"
 GPU_ENVIRONMENT_SCHEMA = "tracebench/gpu-environment/v1"
 GPU_REQUEST_SCHEMA = "tracebench/gpu-request/v1"
 MODEL_FILES = frozenset(
@@ -1035,6 +1036,126 @@ def analyze_gpu_evidence(evidence_dir: Path) -> dict[str, Any]:
     }
 
 
+def compare_gpu_replications(
+    first_evidence_dir: Path,
+    second_evidence_dir: Path,
+) -> dict[str, Any]:
+    """Verify and compare two complete executions of one registered GPU plan."""
+    first_plan, first_manifest = verify_gpu_evidence(first_evidence_dir)
+    second_plan, second_manifest = verify_gpu_evidence(second_evidence_dir)
+    if first_plan != second_plan:
+        raise TraceBenchError("replications must use the same registered GPU plan")
+    first_manifest_sha256 = sha256_file(first_evidence_dir / "manifest.json")
+    second_manifest_sha256 = sha256_file(second_evidence_dir / "manifest.json")
+    if first_manifest_sha256 == second_manifest_sha256:
+        raise TraceBenchError("replications must have distinct evidence manifests")
+
+    first_environment = _read_json_object(
+        first_evidence_dir / "environment.json", "first GPU environment"
+    )
+    second_environment = _read_json_object(
+        second_evidence_dir / "environment.json", "second GPU environment"
+    )
+    if first_environment["tracebench_commit"] != second_environment[
+        "tracebench_commit"
+    ]:
+        raise TraceBenchError("replications must use the same TraceBench commit")
+    if first_environment["runtime_digest"] != second_environment["runtime_digest"]:
+        raise TraceBenchError("replications must use the same registered runtime")
+
+    first_records = _load_execution_records(
+        first_evidence_dir / "executions.jsonl", first_plan, first_environment
+    )
+    second_records = _load_execution_records(
+        second_evidence_dir / "executions.jsonl", second_plan, second_environment
+    )
+
+    def key(record: Mapping[str, Any]) -> tuple[Any, ...]:
+        return (
+            record["mode"],
+            record["cell"],
+            record["schedule_id"],
+            record["repetition"],
+            record["request_id"],
+        )
+
+    first_index = {key(record): record for record in first_records}
+    second_index = {key(record): record for record in second_records}
+    if set(first_index) != set(second_index):
+        raise TraceBenchError("replications do not contain the same execution keys")
+
+    mismatches: list[dict[str, Any]] = []
+    status_mismatches = 0
+    output_mismatches = 0
+    error_mismatches = 0
+    for record_key in sorted(first_index):
+        first_record = first_index[record_key]
+        second_record = second_index[record_key]
+        status_changed = first_record["status"] != second_record["status"]
+        output_changed = (
+            first_record["output_sha256"] != second_record["output_sha256"]
+        )
+        error_changed = first_record["error"] != second_record["error"]
+        if not (status_changed or output_changed or error_changed):
+            continue
+        status_mismatches += int(status_changed)
+        output_mismatches += int(output_changed)
+        error_mismatches += int(error_changed)
+        mode, cell, schedule_id, repetition, request_id = record_key
+        mismatches.append(
+            {
+                "mode": mode,
+                "cell": cell,
+                "schedule_id": schedule_id,
+                "repetition": repetition,
+                "request_id": request_id,
+                "first_status": first_record["status"],
+                "second_status": second_record["status"],
+                "first_output_sha256": first_record["output_sha256"],
+                "second_output_sha256": second_record["output_sha256"],
+                "first_error": first_record["error"],
+                "second_error": second_record["error"],
+            }
+        )
+
+    first_analysis = analyze_gpu_evidence(first_evidence_dir)
+    second_analysis = analyze_gpu_evidence(second_evidence_dir)
+    runs = []
+    for ordinal, manifest, manifest_sha256, analysis in (
+        (1, first_manifest, first_manifest_sha256, first_analysis),
+        (2, second_manifest, second_manifest_sha256, second_analysis),
+    ):
+        runs.append(
+            {
+                "run": ordinal,
+                "evidence_manifest_sha256": manifest_sha256,
+                "executions_sha256": manifest["executions_sha256"],
+                "environment_sha256": manifest["environment_sha256"],
+                "started_at": manifest["started_at"],
+                "completed_at": manifest["completed_at"],
+                "analysis_rows": analysis["rows"],
+            }
+        )
+
+    return {
+        "schema": GPU_REPLICATION_SCHEMA,
+        "experiment_id": first_plan["experiment_id"],
+        "plan_sha256": plan_sha256(first_plan),
+        "tracebench_commit": first_environment["tracebench_commit"],
+        "runtime_digest": first_environment["runtime_digest"],
+        "execution_records_compared": len(first_index),
+        "outcome_mismatches": len(mismatches),
+        "status_mismatches": status_mismatches,
+        "output_mismatches": output_mismatches,
+        "error_mismatches": error_mismatches,
+        "identical_execution_outcomes": not mismatches,
+        "identical_analysis_rows": first_analysis["rows"]
+        == second_analysis["rows"],
+        "runs": runs,
+        "mismatches": mismatches,
+    }
+
+
 def write_gpu_analysis(output_dir: Path, analysis: Mapping[str, Any]) -> None:
     if output_dir.exists():
         raise TraceBenchError(f"analysis output already exists: {output_dir}")
@@ -1093,3 +1214,80 @@ def write_gpu_analysis(output_dir: Path, analysis: Mapping[str, Any]) -> None:
         ]
     )
     (output_dir / "gpu-results.md").write_text("\n".join(lines), encoding="utf-8")
+
+
+def write_gpu_replication_comparison(
+    output_dir: Path,
+    comparison: Mapping[str, Any],
+) -> None:
+    if output_dir.exists():
+        raise TraceBenchError(f"replication output already exists: {output_dir}")
+    output_dir.mkdir(parents=True)
+    (output_dir / "gpu-replication.json").write_text(
+        json.dumps(comparison, indent=2, sort_keys=True, allow_nan=False) + "\n",
+        encoding="utf-8",
+    )
+
+    fieldnames = (
+        "run",
+        "evidence_manifest_sha256",
+        "mode",
+        "condition",
+        "planned_comparisons",
+        "valid_comparisons",
+        "invalid_comparisons",
+        "divergences",
+        "sequence_divergence_rate_pct",
+        "wilson_95_lower_pct",
+        "wilson_95_upper_pct",
+    )
+    buffer = io.StringIO(newline="")
+    writer = csv.DictWriter(buffer, fieldnames=fieldnames, lineterminator="\n")
+    writer.writeheader()
+    for run in comparison["runs"]:
+        for row in run["analysis_rows"]:
+            writer.writerow(
+                {
+                    "run": run["run"],
+                    "evidence_manifest_sha256": run["evidence_manifest_sha256"],
+                    **{field: row[field] for field in fieldnames[2:]},
+                }
+            )
+    (output_dir / "gpu-replication.csv").write_text(
+        buffer.getvalue(), encoding="utf-8"
+    )
+
+    lines = [
+        "# TraceBench GPU Replication Comparison",
+        "",
+        f"- Registered plan: `{comparison['plan_sha256']}`",
+        f"- Execution records compared: {comparison['execution_records_compared']}",
+        f"- Terminal-outcome mismatches: {comparison['outcome_mismatches']}",
+        f"- Identical aggregate analysis rows: {comparison['identical_analysis_rows']}",
+        "",
+        "| Run | Mode | Condition | Valid / planned | Divergences | Rate |",
+        "| ---: | --- | --- | ---: | ---: | ---: |",
+    ]
+    for run in comparison["runs"]:
+        for row in run["analysis_rows"]:
+            rate = (
+                "n/a"
+                if row["sequence_divergence_rate_pct"] is None
+                else f"{row['sequence_divergence_rate_pct']:.3f}%"
+            )
+            lines.append(
+                f"| {run['run']} | {row['mode']} | {row['condition']} | "
+                f"{row['valid_comparisons']} / {row['planned_comparisons']} | "
+                f"{row['divergences']} | {rate} |"
+            )
+    lines.extend(
+        [
+            "",
+            "The comparison verifies exact registered execution outcomes. It does not "
+            "turn the fixed prompts or repeated runs into a population sample.",
+            "",
+        ]
+    )
+    (output_dir / "gpu-replication.md").write_text(
+        "\n".join(lines), encoding="utf-8"
+    )

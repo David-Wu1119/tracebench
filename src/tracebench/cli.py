@@ -9,7 +9,12 @@ from typing import Any, Mapping
 
 from tracebench.analysis import run_benchmark, write_results
 from tracebench.calibration import derive_calibration, write_calibration
-from tracebench.gpu import analyze_gpu_evidence, write_gpu_analysis
+from tracebench.gpu import (
+    analyze_gpu_evidence,
+    compare_gpu_replications,
+    write_gpu_analysis,
+    write_gpu_replication_comparison,
+)
 from tracebench.workload import DriftSchedule, WorkloadConfig, generate_workload
 
 
@@ -142,6 +147,13 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     gpu_analyze.add_argument("--evidence", type=Path, required=True)
     gpu_analyze.add_argument("--output", type=Path, required=True)
+
+    gpu_compare = subparsers.add_parser(
+        "gpu-compare",
+        help="Verify and compare two complete GPU evidence directories.",
+    )
+    gpu_compare.add_argument("--evidence", type=Path, nargs=2, required=True)
+    gpu_compare.add_argument("--output", type=Path, required=True)
     return parser.parse_args(argv)
 
 
@@ -171,6 +183,11 @@ def main(argv: list[str] | None = None) -> None:
         analysis = analyze_gpu_evidence(args.evidence)
         write_gpu_analysis(args.output, analysis)
         print(f"wrote GPU analysis to {args.output}")
+        return
+    if args.command == "gpu-compare":
+        comparison = compare_gpu_replications(*args.evidence)
+        write_gpu_replication_comparison(args.output, comparison)
+        print(f"wrote GPU replication comparison to {args.output}")
         return
     config = _load_config(args.config)
     if args.command == "generate":
