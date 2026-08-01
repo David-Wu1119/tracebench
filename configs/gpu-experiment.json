@@ -1,0 +1,91 @@
+{
+  "schema": "tracebench/gpu-plan/v1",
+  "experiment_id": "qwen25-05b-rtx2060-batching-v1",
+  "preregistration": {
+    "registered_at": "2026-08-01T05:38:46Z",
+    "primary_metric": "exact output-token sequence divergence rate",
+    "sample_size_rule": "16 fixed requests x 5 schedule variants and 5 pinned replays per decoding mode",
+    "reporting_rule": "retain and report every valid, divergent, and failed comparison",
+    "hypothesis": "batch variation increases sampled sequence divergence; exact schedule and control pinning reduces it"
+  },
+  "model": {
+    "repository": "Qwen/Qwen2.5-0.5B-Instruct",
+    "revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+    "files_sha256": {
+      "config.json": "18e18afcaccafade98daf13a54092927904649e1dd4eba8299ab717d5d94ff45",
+      "generation_config.json": "e558847a8b4402616f1273797b015104dc266fe4b520056fca88823ba8f8ebe6",
+      "merges.txt": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3",
+      "model.safetensors": "fdf756fa7fcbe7404d5c60e26bff1a0c8b8aa1f72ced49e7dd0210fe288fb7fe",
+      "tokenizer.json": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539",
+      "tokenizer_config.json": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583",
+      "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+    }
+  },
+  "request_count": 16,
+  "requests": [
+    {"request_id": "request-00", "prompt": "Return only the capital city of France."},
+    {"request_id": "request-01", "prompt": "Compute 37 multiplied by 19. Return only the integer."},
+    {"request_id": "request-02", "prompt": "Classify the sentiment as positive, neutral, or negative: The update works as expected."},
+    {"request_id": "request-03", "prompt": "Write a JSON object with keys status and count, using status ok and count 3."},
+    {"request_id": "request-04", "prompt": "Name the largest planet in the Solar System in one word."},
+    {"request_id": "request-05", "prompt": "Complete the sequence with one number: 2, 4, 8, 16,"},
+    {"request_id": "request-06", "prompt": "Summarize in one sentence why checksums are useful for evidence files."},
+    {"request_id": "request-07", "prompt": "Return the ISO 8601 calendar date immediately after 2024-02-28."},
+    {"request_id": "request-08", "prompt": "Which data structure provides average O(1) key lookup? Return only its common name."},
+    {"request_id": "request-09", "prompt": "Rewrite this as a direct command: It would be good if the service restarted."},
+    {"request_id": "request-10", "prompt": "List exactly three primary colors, separated by commas."},
+    {"request_id": "request-11", "prompt": "A lease expires at time 10. Is it live at time 10 under a half-open interval? Answer yes or no."},
+    {"request_id": "request-12", "prompt": "Translate hello into Spanish. Return only the translated word."},
+    {"request_id": "request-13", "prompt": "State one difference between a hash and an encryption key in at most twelve words."},
+    {"request_id": "request-14", "prompt": "Return a Python expression that evaluates to the sum of integers 1 through 10."},
+    {"request_id": "request-15", "prompt": "Order these values from smallest to largest: 0.5, 1/3, 0.25."}
+  ],
+  "decoding_modes": [
+    {
+      "name": "greedy",
+      "do_sample": false,
+      "max_new_tokens": 32
+    },
+    {
+      "name": "sampled",
+      "do_sample": true,
+      "max_new_tokens": 32,
+      "temperature": 0.8,
+      "top_p": 0.9
+    }
+  ],
+  "schedule": {
+    "global_seed": 20260801,
+    "variant_count": 5,
+    "pinned_repetitions": 5,
+    "batch_sizes": [2, 4],
+    "variant_seeds": [20260811, 20260812, 20260813, 20260814, 20260815]
+  },
+  "runtime": {
+    "device": "cuda:0",
+    "dtype": "float16",
+    "padding_side": "left",
+    "local_files_only": true,
+    "deterministic_algorithms": false,
+    "cudnn_benchmark": false,
+    "allow_tf32": false,
+    "chat_template": "tokenizer.apply_chat_template",
+    "add_generation_prompt": true,
+    "strip_trailing_pad_tokens": true,
+    "seed_reset": "before_each_schedule"
+  },
+  "software_scope": {
+    "python_version": "3.12.10",
+    "torch_version": "2.6.0+cu124",
+    "transformers_version": "5.5.0",
+    "cuda_runtime": "12.4",
+    "package_inventory_sha256": "ddcf0956705fcb4fed4b91d3e1ea2ff847c8743db9465a4dffa9d11bf68d4d46"
+  },
+  "hardware_scope": {
+    "gpu_name": "NVIDIA GeForce RTX 2060",
+    "vram_mib": 6144,
+    "compute_capability": [7, 5],
+    "native_os": "Windows",
+    "engine": "Hugging Face Transformers generate"
+  }
+}
