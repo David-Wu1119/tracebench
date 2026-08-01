@@ -1,55 +1,81 @@
 # GPU Decision-Divergence Path
 
-Status: experiment contract only. Version `0.1.0a0` does not implement or report this experiment.
+Status: runner, verifier, analyzer, and experiment plan implemented; no verified result reported yet.
 
 ## Question
 
 When the same request is replayed on a GPU under batching variation, how often does the generated token sequence diverge, and how much of that divergence remains when a replay capsule pins the observable execution context?
 
-## Engine and models
+## Registered engine and model
 
-Use a proven serving engine rather than a custom scheduler. The planned reference path is a pinned vLLM container with Qwen2.5-0.5B first and Qwen2.5-1.5B second. Record the exact container digest, vLLM version, model revision, tokenizer revision, CUDA runtime, driver, GPU model, and decoding configuration.
+The registered host is native Windows with an NVIDIA GeForce RTX 2060. [vLLM does not support Windows natively](https://docs.vllm.ai/en/latest/getting_started/installation/gpu/), and this host has no WSL distribution. The experiment therefore uses the proven Hugging Face Transformers `generate` implementation instead of a custom inference engine. That narrows every result to this engine and hardware; it is not evidence about vLLM or serving systems generally.
 
-The GPU machine must pull work outbound, preserve raw results locally, and emit a self-contained evidence directory. CloudTune may orchestrate the run, but the public analyzer must consume only the exported evidence contract.
+The first registered model is `Qwen/Qwen2.5-0.5B-Instruct` at revision `7ae557604adf67be50417f59c2c2f167def9a775`. The plan binds the exact seven-file local snapshot with per-file SHA-256 values: weights, model and generation configs, tokenizer config, tokenizer JSON, vocabulary, and merges. Extra, missing, symlinked, or changed files abort the run. Qwen2.5-1.5B is a separate later experiment and must not be pooled into this preregistration.
+
+The plan also fixes Python 3.12.10, PyTorch 2.6.0+cu124, Transformers 5.5.0, CUDA runtime 12.4, the normalized installed-package inventory (excluding the `pip` installer itself), GPU name, 6144 MiB VRAM, and compute capability 7.5. A mismatch aborts before a final evidence directory can be published.
+
+The GPU runner preserves raw results locally and emits a self-contained evidence directory. This experiment is executed directly on the registered host; it is not evidence that CloudTune orchestration or an outbound-only runner path worked. The public analyzer consumes only the exported evidence contract.
 
 ## Experiment cells
 
-Use the same fixed request set in every cell:
+`configs/gpu-experiment.json` fixes 16 synthetic prompts, two decoding modes, five batch-schedule variants, five pinned replays, seeds, batch sizes, runtime flags, and the model snapshot hashes before result inspection. Use the same fixed request set in every cell:
 
-| Cell | Batch schedule | Capsule pins |
+| Condition | Reference | Comparison |
 | --- | --- | --- |
-| A | Dynamic, varied arrival order | Input and declared model reference only |
-| B | Dynamic, repeated with a second order | Input and declared model reference only |
-| C | Recorded batch membership and order | Model/tokenizer/runtime/seed/decoding/batch |
-| D | Exact replay of cell C | Model/tokenizer/runtime/seed/decoding/batch |
+| Uncontrolled batch variation | Each request generated alone | Same request under each of five registered shuffled batch schedules |
+| Capsule-pinned replay | The recorded `variant-00` execution | Five exact replays with the same model snapshot, runtime, seed, decoding controls, batch membership, order, and position |
 
-Run enough repetitions to report a binomial confidence interval, not one anecdotal mismatch. The final sample size must be chosen before inspecting divergence results and recorded in the experiment manifest.
+The registered sample size is 80 comparisons per condition and decoding mode. This is exploratory, not a high-powered population estimate. The analyzer reports Wilson intervals and retains this limitation.
+
+## Commands
+
+Install the optional environment on a compatible Windows CUDA host:
+
+```powershell
+python -m pip install -r requirements-gpu-windows.txt
+$env:PYTHONPATH = (Resolve-Path .\src)
+```
+
+Execute the registered plan with an already downloaded, revision-pinned model directory:
+
+```powershell
+python -m tracebench gpu-run --plan configs/gpu-experiment.json --model-path D:\path\to\pinned-model --implementation-commit <40-character-tracebench-commit> --output D:\path\to\new-evidence-directory
+```
+
+Verify checksums and produce the result table on a CPU-only machine:
+
+```bash
+PYTHONPATH=src python -m tracebench gpu-analyze --evidence /path/to/evidence-directory --output /path/to/new-analysis-directory
+```
 
 ## Required exported files
 
 ```text
 gpu-evidence/
-  manifest.json
-  requests.jsonl
-  executions.jsonl
-  environment.json
-  nvidia-smi.txt
-  container-image.txt
-  logs/
   checksums.sha256
+  environment.json
+  executions.jsonl
+  manifest.json
+  nvidia-smi.txt
+  packages.txt
+  plan.json
+  requests.jsonl
+  runner.log
 ```
 
-Each execution row must bind:
+The sidecar binds the exact eight-file payload; unbound extra files are rejected. The plan, environment, request rows, execution rows, manifest hashes, record counts, and TraceBench commit are then cross-validated rather than trusted independently.
+
+Each execution row binds:
 
 - request ID and input digest;
-- model and tokenizer revisions;
-- seed and all decoding parameters;
+- the runtime digest, which binds model/tokenizer snapshot, software, hardware, and runtime settings;
+- the registered seed and decoding mode;
 - batch ID, ordered batch members, and position;
-- runtime/container digest and GPU identity;
+- the exact TraceBench implementation commit;
 - output token IDs and output digest;
-- start/end timestamps and terminal status.
+- batch duration, terminal status, and retained error text.
 
-The manifest must distinguish recorded values from inferred values. Missing fields remain missing; the exporter must not fill them from a later environment.
+The runner writes to a `.partial` directory and only renames it to the final path after the registered record count, manifest, and checksums are complete. A failed run stays partial and is not valid evidence.
 
 ## Metrics
 
@@ -62,10 +88,10 @@ sequence_divergence_rate = replays with a different output-token digest / valid 
 Secondary metrics:
 
 - normalized first-different-token position;
-- output-length difference;
 - invalid replay rate, reported separately from divergence;
-- divergence by batch size and batch position;
 - Wilson 95% confidence intervals.
+
+The Wilson interval treats repeated comparisons as independent and is descriptive only. The 16 fixed prompts are not a population sample, so the interval must not be presented as population-level uncertainty.
 
 Do not use semantic similarity as the headline metric. It can hide exact decision changes and introduces another model into the measurement chain.
 

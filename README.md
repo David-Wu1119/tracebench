@@ -68,11 +68,13 @@ Artifact drift cadences, virtual artifact sizes, the batch window, and audit hor
 - `src/tracebench/protocol.py`: generation-fenced lease, heartbeat, reclaim, and idempotent terminal-report semantics.
 - `src/tracebench/calibration.py`: public-trace calibration and source-hash binding.
 - `src/tracebench/analysis.py`: deterministic result and manifest generation.
+- `src/tracebench/gpu.py`: registered GPU schedules, evidence verification, and exact-token divergence analysis.
+- `src/tracebench/gpu_runner.py`: optional CUDA/Transformers execution path with lazy dependencies.
 - `tests/`: behavioral tests over the public seams.
 
 ## Scope boundary
 
-Version `0.1.0a0` establishes a CPU-reproducible structural benchmark. It does not yet include the GPU decision-divergence experiment. The intended experiment and required evidence contract are documented in [`docs/gpu-path.md`](docs/gpu-path.md); no result from that document should be treated as measured until a GPU evidence packet is published.
+Version `0.1.0a0` establishes a CPU-reproducible structural benchmark and includes a preregistered optional GPU runner/analyzer. The GPU experiment has not yet produced a verified public result. The registered experiment and evidence contract are documented in [`docs/gpu-path.md`](docs/gpu-path.md); no GPU claim is measured until a verified evidence packet is published.
 
 TraceBench is the public research artifact. CloudTune remains a separate private testbed and is not required to run this repository.
 

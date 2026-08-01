@@ -1,4 +1,4 @@
-"""Command-line entry points for generation and CPU benchmarking."""
+"""Command-line entry points for CPU benchmarks and optional GPU evidence."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from typing import Any, Mapping
 
 from tracebench.analysis import run_benchmark, write_results
 from tracebench.calibration import derive_calibration, write_calibration
+from tracebench.gpu import analyze_gpu_evidence, write_gpu_analysis
 from tracebench.workload import DriftSchedule, WorkloadConfig, generate_workload
 
 
@@ -125,6 +126,22 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     calibrate.add_argument("--azure-code", type=Path, required=True)
     calibrate.add_argument("--azure-conversation", type=Path, required=True)
     calibrate.add_argument("--output", type=Path, required=True)
+
+    gpu_run = subparsers.add_parser(
+        "gpu-run",
+        help="Run the registered optional GPU batching experiment.",
+    )
+    gpu_run.add_argument("--plan", type=Path, required=True)
+    gpu_run.add_argument("--model-path", type=Path, required=True)
+    gpu_run.add_argument("--output", type=Path, required=True)
+    gpu_run.add_argument("--implementation-commit", required=True)
+
+    gpu_analyze = subparsers.add_parser(
+        "gpu-analyze",
+        help="Verify and analyze an exported GPU evidence directory.",
+    )
+    gpu_analyze.add_argument("--evidence", type=Path, required=True)
+    gpu_analyze.add_argument("--output", type=Path, required=True)
     return parser.parse_args(argv)
 
 
@@ -138,6 +155,22 @@ def main(argv: list[str] | None = None) -> None:
         )
         write_calibration(args.output, calibration)
         print(f"wrote public-trace calibration to {args.output}")
+        return
+    if args.command == "gpu-run":
+        from tracebench.gpu_runner import run_gpu_experiment
+
+        output = run_gpu_experiment(
+            plan_path=args.plan,
+            model_path=args.model_path,
+            output_dir=args.output,
+            implementation_commit=args.implementation_commit,
+        )
+        print(f"wrote GPU evidence to {output}")
+        return
+    if args.command == "gpu-analyze":
+        analysis = analyze_gpu_evidence(args.evidence)
+        write_gpu_analysis(args.output, analysis)
+        print(f"wrote GPU analysis to {args.output}")
         return
     config = _load_config(args.config)
     if args.command == "generate":
